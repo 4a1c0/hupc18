@@ -40,18 +40,7 @@ logger = logging.getLogger(__name__)
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update):
     """Send a message when the command /start is issued."""
-    update.message.reply_text('Hi!')
-
-
-def help(bot, update):
-    """Send a message when the command /help is issued."""
-    update.message.reply_text('Help!')
-
-
-def echo(bot, update):
-    """Echo the user message."""
-    update.message.reply_text(update.message.text)
-
+    update.message.reply_text('Ask me for a flight!')
 
 def error(bot, update, error):
     """Log Errors caused by Updates."""
@@ -68,15 +57,14 @@ def transcript(bot, update):
         r.adjust_for_ambient_noise(audio_file, duration=0.5)
         audio = r.record(audio_file)
     
-    mes = r.recognize_google(audio, language='es-ES')
+    mes = r.recognize_google(audio)
     os.remove(audio_recv)
     os.remove(audio_recv + ".aiff")
     return mes
 
-def skySearch(bot,update):
-	msg = transcript(bot,update)
+def skyscanner(msg,bot,update):
 
-	if(msg.find("vuelo") == -1):
+	if((msg.find("flight") == -1) and (msg.find("to fly") == -1)):
 		update.message.reply_text(msg)
 	else:
 		flights_cache_service = FlightsCache('ha306082955374085267757354385037')
@@ -106,22 +94,28 @@ def skySearch(bot,update):
 		update.message.reply_text("Vol de "+placesDic[aeroSortida]["Name"]+" a "+placesDic[aeroArribada]["Name"]+" gestionat per "+carrierDic[carrierID]+".")
 
 
+def skySearch_voice(bot,update):
+	skyscanner(transcript(bot,update),bot,update)
+
+def skySearch_text(bot,update):
+	skyscanner(update.message.text,bot,update)
+	
+
 
 def main():
     """Start the bot."""
     # Create the EventHandler and pass it your bot's token.
-    updater = Updater("661672090:AAGA-CidQPBZAGorofa1Pf_NUp8mzvUVxDc")
+    updater = Updater("658306194:AAGEnbfg-flLxhsC0HZHnJUvf-bpjJ8Vc_c")
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", help))
 
     # on noncommand i.e message - echo the message on Telegram
-    dp.add_handler(MessageHandler(Filters.text, echo))
-    dp.add_handler(MessageHandler(Filters.voice, skySearch))
+    dp.add_handler(MessageHandler(Filters.text, skySearch_text))
+    dp.add_handler(MessageHandler(Filters.voice, skySearch_voice))
 
     # log all errors
     dp.add_error_handler(error)
