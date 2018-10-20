@@ -59,7 +59,6 @@ def transcript(bot, update):
     """Transcribes Voice to Text"""
     r = sr.Recognizer()
     audio_recv =  update.message.voice.get_file().download()
-    print(audio_recv + ".aiff")
     audio = AudioSegment.from_file(audio_recv, format= "ogg" )
     audio.export(audio_recv + ".aiff", format = "aiff")
     
@@ -68,10 +67,9 @@ def transcript(bot, update):
         audio = r.record(audio_file)
     
     mes = r.recognize_google(audio, language='es-ES')
-    print(mes)
-    update.message.reply_text(mes)
     os.remove(audio_recv)
     os.remove(audio_recv + ".aiff")
+    return mes
 
 
 def main():
