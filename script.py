@@ -31,7 +31,7 @@ from skyscanner.skyscanner import FlightsCache
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+					level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
@@ -39,43 +39,58 @@ logger = logging.getLogger(__name__)
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update):
-    """Send a message when the command /start is issued."""
-    update.message.reply_text('Ask me for a flight!')
+	"""Send a message when the command /start is issued."""
+	update.message.reply_text('Ask me for a flight!')
 
 def error(bot, update, error):
-    """Log Errors caused by Updates."""
-    logger.warning('Update "%s" caused error "%s"', update, error)
+	"""Log Errors caused by Updates."""
+	logger.warning('Update "%s" caused error "%s"', update, error)
 
 def transcript(bot, update):
-    """Transcribes Voice to Text"""
-    r = sr.Recognizer()
-    audio_recv =  update.message.voice.get_file().download()
-    audio = AudioSegment.from_file(audio_recv, format= "ogg" )
-    audio.export(audio_recv + ".aiff", format = "aiff")
-    
-    with sr.AudioFile(audio_recv + ".aiff") as audio_file:
-        r.adjust_for_ambient_noise(audio_file, duration=0.5)
-        audio = r.record(audio_file)
-    
-    mes = r.recognize_google(audio)
-    os.remove(audio_recv)
-    os.remove(audio_recv + ".aiff")
-    return mes
+	"""Transcribes Voice to Text"""
+	r = sr.Recognizer()
+	audio_recv =  update.message.voice.get_file().download()
+	audio = AudioSegment.from_file(audio_recv, format= "ogg" )
+	audio.export(audio_recv + ".aiff", format = "aiff")
+	
+	with sr.AudioFile(audio_recv + ".aiff") as audio_file:
+		r.adjust_for_ambient_noise(audio_file, duration=0.5)
+		audio = r.record(audio_file)
+	
+	mes = r.recognize_google(audio)
+	os.remove(audio_recv)
+	os.remove(audio_recv + ".aiff")
+	return mes
 
 def skyscanner(msg,bot,update):
 
-	if((msg.find("flight") == -1) and (msg.find("to fly") == -1)):
+	if((msg.find("flight") == -1) and (msg.find("to fly") == -1) and (msg.find("fly to") == -1) and (msg.find("fly from") == -1)):
 		update.message.reply_text(msg)
+
 	else:
+		index_to = msg.rfind("to ")
+		index_from = msg.rfind("from ")
+
 		flights_cache_service = FlightsCache('ha306082955374085267757354385037')
+		print(msg)
+		if (index_to) != -1:
+			to = msg[index_to + 3:]
+			to = to[:to.find(" ")]  # de moement fins a white space o final de linia, pero faltarà 
+			print(to)
+
+		if (index_from) != -1:
+			from_ = msg[index_from + 5:]
+			from_ = from_[:from_.find(" ")]  # de moement fins a white space o final de linia, pero faltarà 
+			print(from_)
+
 		result = flights_cache_service.get_cheapest_quotes(
-		    market='UK',
-		    currency='GBP',
-		    locale='en-GB',
-		    originplace='SIN-sky',
-		    destinationplace='KUL-sky',
-		    outbounddate='2018-10-25',
-		    adults=1).parsed
+			market='UK',
+			currency='GBP',
+			locale='en-GB',
+			originplace='SIN-sky',
+			destinationplace='KUL-sky',
+			outbounddate='2018-10-25',
+			adults=1).parsed
 
 		carrierID = result["Quotes"][0]["OutboundLeg"]["CarrierIds"][0]
 		aeroSortida = result["Quotes"][0]["OutboundLeg"]["OriginId"]
@@ -91,7 +106,7 @@ def skyscanner(msg,bot,update):
 			placesDic[place["PlaceId"]] = place
 			place.pop('PlaceId', None)
 
-		update.message.reply_text("Vol de "+placesDic[aeroSortida]["Name"]+" a "+placesDic[aeroArribada]["Name"]+" gestionat per "+carrierDic[carrierID]+".")
+		update.message.reply_text(from_ + " --> " + to + " Vol de "+placesDic[aeroSortida]["Name"]+" a "+placesDic[aeroArribada]["Name"]+" gestionat per "+carrierDic[carrierID]+".")
 
 
 def skySearch_voice(bot,update):
@@ -103,31 +118,31 @@ def skySearch_text(bot,update):
 
 
 def main():
-    """Start the bot."""
-    # Create the EventHandler and pass it your bot's token.
-    updater = Updater("658306194:AAGEnbfg-flLxhsC0HZHnJUvf-bpjJ8Vc_c")
+	"""Start the bot."""
+	# Create the EventHandler and pass it your bot's token.
+	updater = Updater("658306194:AAGEnbfg-flLxhsC0HZHnJUvf-bpjJ8Vc_c")
 
-    # Get the dispatcher to register handlers
-    dp = updater.dispatcher
+	# Get the dispatcher to register handlers
+	dp = updater.dispatcher
 
-    # on different commands - answer in Telegram
-    dp.add_handler(CommandHandler("start", start))
+	# on different commands - answer in Telegram
+	dp.add_handler(CommandHandler("start", start))
 
-    # on noncommand i.e message - echo the message on Telegram
-    dp.add_handler(MessageHandler(Filters.text, skySearch_text))
-    dp.add_handler(MessageHandler(Filters.voice, skySearch_voice))
+	# on noncommand i.e message - echo the message on Telegram
+	dp.add_handler(MessageHandler(Filters.text, skySearch_text))
+	dp.add_handler(MessageHandler(Filters.voice, skySearch_voice))
 
-    # log all errors
-    dp.add_error_handler(error)
+	# log all errors
+	dp.add_error_handler(error)
 
-    # Start the Bot
-    updater.start_polling()
+	# Start the Bot
+	updater.start_polling()
 
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
-    updater.idle()
+	# Run the bot until you press Ctrl-C or the process receives SIGINT,
+	# SIGTERM or SIGABRT. This should be used most of the time, since
+	# start_polling() is non-blocking and will stop the bot gracefully.
+	updater.idle()
 
 
 if __name__ == '__main__':
-    main()
+	main()
