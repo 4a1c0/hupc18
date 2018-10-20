@@ -26,7 +26,7 @@ from pydub import AudioSegment  # pip install pydub y ffmpeg
 
 import os
 
-from skyscanner.skyscanner import FlightsCache
+from skyscanner.skyscanner import FlightsCache, Transport
 
 
 # Enable logging
@@ -45,6 +45,16 @@ def start(bot, update):
 def error(bot, update, error):
 	"""Log Errors caused by Updates."""
 	logger.warning('Update "%s" caused error "%s"', update, error)
+
+def cityDecoder(city):
+	flights_locale = Transport('ha306082955374085267757354385037')
+	result = flights_locale.location_autosuggest(
+	    market='ES',
+	    currency='eur',
+	    locale='en-GB',
+	    query = city).parsed
+
+	return result
 
 def transcript(bot, update):
 	"""Transcribes Voice to Text"""
@@ -76,21 +86,24 @@ def skyscanner(msg,bot,update):
 		if (index_to) != -1:
 			to = msg[index_to + 3:]
 			to = to[:to.find(" ")]
-			print(to)
+			
 
 		if (index_from) != -1:
 			from_ = msg[index_from + 5:]
 			from_ = from_[:from_.find(" ")]
-			print(from_)
+			
+
+		to = cityDecoder(to)
+		from_ = cityDecoder(from_)		
 
 		result = flights_cache_service.get_cheapest_quotes(
-			market='UK',
-			currency='GBP',
+			market='ES',
+			currency='eur',
 			locale='en-GB',
-			originplace='SIN-sky',
-			destinationplace='KUL-sky',
-			outbounddate='2018-10-25',
-			adults=1).parsed
+			originplace=from_["Places"][0]["PlaceId"],
+			destinationplace=to["Places"][0]["PlaceId"],
+			outbounddate='anytime'
+			).parsed
 
 		carrierID = result["Quotes"][0]["OutboundLeg"]["CarrierIds"][0]
 		aeroSortida = result["Quotes"][0]["OutboundLeg"]["OriginId"]
@@ -106,7 +119,9 @@ def skyscanner(msg,bot,update):
 			placesDic[place["PlaceId"]] = place
 			place.pop('PlaceId', None)
 
-		update.message.reply_text(from_ + " --> " + to + " Vol de "+placesDic[aeroSortida]["Name"]+" a "+placesDic[aeroArribada]["Name"]+" gestionat per "+carrierDic[carrierID]+".")
+		update.message.reply_text("Departure from "+placesDic[aeroSortida]["Name"]+
+			" Airport to "+placesDic[aeroArribada]["Name"]+" Airport, carried by "
+			+carrierDic[carrierID]+" from "+str(format(result["Quotes"][0]["MinPrice"], '.0f')) + " " +result["Currencies"][0]["Symbol"]+".")
 
 
 def skySearch_voice(bot,update):
