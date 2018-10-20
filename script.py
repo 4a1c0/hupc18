@@ -26,6 +26,8 @@ from pydub import AudioSegment  # pip install pydub y ffmpeg
 
 import os
 
+from skyscanner.skyscanner import FlightsCache
+
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -71,6 +73,39 @@ def transcript(bot, update):
     os.remove(audio_recv + ".aiff")
     return mes
 
+def skySearch(bot,update):
+	msg = transcript(bot,update)
+
+	if(msg.find("vuelo") == -1):
+		update.message.reply_text(msg)
+	else:
+		flights_cache_service = FlightsCache('ha306082955374085267757354385037')
+		result = flights_cache_service.get_cheapest_quotes(
+		    market='UK',
+		    currency='GBP',
+		    locale='en-GB',
+		    originplace='SIN-sky',
+		    destinationplace='KUL-sky',
+		    outbounddate='2018-10-25',
+		    adults=1).parsed
+
+		carrierID = result["Quotes"][0]["OutboundLeg"]["CarrierIds"][0]
+		aeroSortida = result["Quotes"][0]["OutboundLeg"]["OriginId"]
+		aeroArribada = result["Quotes"][0]["OutboundLeg"]["DestinationId"]
+
+
+		carrierDic = {}
+		for carrier in result["Carriers"]:
+			carrierDic[carrier["CarrierId"]] = carrier["Name"];
+
+		placesDic = {}
+		for place in result["Places"]:
+			placesDic[place["PlaceId"]] = place
+			place.pop('PlaceId', None)
+
+		update.message.reply_text("Vol de "+placesDic[aeroSortida]["Name"]+" a "+placesDic[aeroArribada]["Name"]+" gestionat per "+carrierDic[carrierID]+".")
+
+
 
 def main():
     """Start the bot."""
@@ -86,7 +121,7 @@ def main():
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
-    dp.add_handler(MessageHandler(Filters.voice, transcript))
+    dp.add_handler(MessageHandler(Filters.voice, skySearch))
 
     # log all errors
     dp.add_error_handler(error)
