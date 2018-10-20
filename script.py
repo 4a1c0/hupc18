@@ -70,17 +70,17 @@ def skyscanner(msg,bot,update):
 	else:
 		index_to = msg.rfind("to ")
 		index_from = msg.rfind("from ")
+		msg = msg + " " # Som una mica ganduls i no volem que el find(" ") retorni -1 si es l'ultima paraula
 
 		flights_cache_service = FlightsCache('ha306082955374085267757354385037')
-		print(msg)
 		if (index_to) != -1:
 			to = msg[index_to + 3:]
-			to = to[:to.find(" ")]  # de moement fins a white space o final de linia, pero faltarà 
+			to = to[:to.find(" ")]
 			print(to)
 
 		if (index_from) != -1:
 			from_ = msg[index_from + 5:]
-			from_ = from_[:from_.find(" ")]  # de moement fins a white space o final de linia, pero faltarà 
+			from_ = from_[:from_.find(" ")]
 			print(from_)
 
 		result = flights_cache_service.get_cheapest_quotes(
