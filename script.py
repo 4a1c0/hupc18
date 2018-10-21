@@ -114,7 +114,7 @@ def skyscanner(msg,bot,update):
 			carrierID = result["Quotes"][0]["OutboundLeg"]["CarrierIds"][0]
 			aeroSortida = result["Quotes"][0]["OutboundLeg"]["OriginId"]
 			aeroArribada = result["Quotes"][0]["OutboundLeg"]["DestinationId"]
-
+			departureDate = result["Quotes"][0]["OutboundLeg"]["DepartureDate"]
 
 			carrierDic = {}
 			for carrier in result["Carriers"]:
@@ -126,7 +126,7 @@ def skyscanner(msg,bot,update):
 				place.pop('PlaceId', None)
 
 			update.message.reply_text("Departure from "+placesDic[aeroSortida]["Name"]+
-				" Airport to "+placesDic[aeroArribada]["Name"]+" Airport, carried by "
+				" Airport to "+placesDic[aeroArribada]["Name"]+" Airport, with departure date: " + departureDate + " and carried by "
 				+carrierDic[carrierID]+" from "+str(format(result["Quotes"][0]["MinPrice"], '.0f')) + " " +result["Currencies"][0]["Symbol"]+".")
 
 		except Exception as e:
