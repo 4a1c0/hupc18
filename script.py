@@ -58,71 +58,80 @@ def cityDecoder(city):
 
 def transcript(bot, update):
 	"""Transcribes Voice to Text"""
-	r = sr.Recognizer()
-	audio_recv =  update.message.voice.get_file().download()
-	audio = AudioSegment.from_file(audio_recv, format= "ogg" )
-	audio.export(audio_recv + ".aiff", format = "aiff")
-	
-	with sr.AudioFile(audio_recv + ".aiff") as audio_file:
-		r.adjust_for_ambient_noise(audio_file, duration=0.5)
-		audio = r.record(audio_file)
-	
-	mes = r.recognize_google(audio)
-	os.remove(audio_recv)
-	os.remove(audio_recv + ".aiff")
+
+	try:
+		r = sr.Recognizer()
+		audio_recv =  update.message.voice.get_file().download()
+		audio = AudioSegment.from_file(audio_recv, format= "ogg" )
+		audio.export(audio_recv + ".aiff", format = "aiff")
+		
+		with sr.AudioFile(audio_recv + ".aiff") as audio_file:
+			r.adjust_for_ambient_noise(audio_file, duration=0.5)
+			audio = r.record(audio_file)
+		
+		mes = r.recognize_google(audio)
+		os.remove(audio_recv)
+		os.remove(audio_recv + ".aiff")
+	except Exception as e:
+		msg = "I can not hear you"
+
 	return mes
 
 def skyscanner(msg,bot,update):
 
 	if((msg.find("flight") == -1) and (msg.find("to fly") == -1) and (msg.find("fly to") == -1) and (msg.find("fly from") == -1)):
-		update.message.reply_text(msg)
+		update.message.reply_text("Are you asking for a flight?")
 
 	else:
-		index_to = msg.rfind("to ")
-		index_from = msg.rfind("from ")
-		msg = msg + " " # Som una mica ganduls i no volem que el find(" ") retorni -1 si es l'ultima paraula
+		try:
+			index_to = msg.rfind("to ")
+			index_from = msg.rfind("from ")
+			msg = msg + " " # Som una mica ganduls i no volem que el find(" ") retorni -1 si es l'ultima paraula
 
-		flights_cache_service = FlightsCache('ha306082955374085267757354385037')
-		if (index_to) != -1:
-			to = msg[index_to + 3:]
-			to = to[:to.find(" ")]
-			
+			flights_cache_service = FlightsCache('ha306082955374085267757354385037')
+			if (index_to) != -1:
+				to = msg[index_to + 3:]
+				to = to[:to.find(" ")]
+				
 
-		if (index_from) != -1:
-			from_ = msg[index_from + 5:]
-			from_ = from_[:from_.find(" ")]
-			
+			if (index_from) != -1:
+				from_ = msg[index_from + 5:]
+				from_ = from_[:from_.find(" ")]
+				
 
-		to = cityDecoder(to)
-		from_ = cityDecoder(from_)		
+			to = cityDecoder(to)
+			from_ = cityDecoder(from_)		
 
-		result = flights_cache_service.get_cheapest_quotes(
-			market='ES',
-			currency='eur',
-			locale='en-GB',
-			originplace=from_["Places"][0]["PlaceId"],
-			destinationplace=to["Places"][0]["PlaceId"],
-			outbounddate='anytime'
-			).parsed
+			result = flights_cache_service.get_cheapest_quotes(
+				market='ES',
+				currency='eur',
+				locale='en-GB',
+				originplace=from_["Places"][0]["PlaceId"],
+				destinationplace=to["Places"][0]["PlaceId"],
+				outbounddate='anytime'
+				).parsed
 
-		carrierID = result["Quotes"][0]["OutboundLeg"]["CarrierIds"][0]
-		aeroSortida = result["Quotes"][0]["OutboundLeg"]["OriginId"]
-		aeroArribada = result["Quotes"][0]["OutboundLeg"]["DestinationId"]
+			carrierID = result["Quotes"][0]["OutboundLeg"]["CarrierIds"][0]
+			aeroSortida = result["Quotes"][0]["OutboundLeg"]["OriginId"]
+			aeroArribada = result["Quotes"][0]["OutboundLeg"]["DestinationId"]
 
 
-		carrierDic = {}
-		for carrier in result["Carriers"]:
-			carrierDic[carrier["CarrierId"]] = carrier["Name"];
+			carrierDic = {}
+			for carrier in result["Carriers"]:
+				carrierDic[carrier["CarrierId"]] = carrier["Name"];
 
-		placesDic = {}
-		for place in result["Places"]:
-			placesDic[place["PlaceId"]] = place
-			place.pop('PlaceId', None)
+			placesDic = {}
+			for place in result["Places"]:
+				placesDic[place["PlaceId"]] = place
+				place.pop('PlaceId', None)
 
-		update.message.reply_text("Departure from "+placesDic[aeroSortida]["Name"]+
-			" Airport to "+placesDic[aeroArribada]["Name"]+" Airport, carried by "
-			+carrierDic[carrierID]+" from "+str(format(result["Quotes"][0]["MinPrice"], '.0f')) + " " +result["Currencies"][0]["Symbol"]+".")
+			update.message.reply_text("Departure from "+placesDic[aeroSortida]["Name"]+
+				" Airport to "+placesDic[aeroArribada]["Name"]+" Airport, carried by "
+				+carrierDic[carrierID]+" from "+str(format(result["Quotes"][0]["MinPrice"], '.0f')) + " " +result["Currencies"][0]["Symbol"]+".")
 
+		except Exception as e:
+			update.message.reply_text("Some data seems wrong, have you indicated an origin and a destination?")
+		
 
 def skySearch_voice(bot,update):
 	skyscanner(transcript(bot,update),bot,update)
@@ -135,7 +144,7 @@ def skySearch_text(bot,update):
 def main():
 	"""Start the bot."""
 	# Create the EventHandler and pass it your bot's token.
-	updater = Updater("658306194:AAGEnbfg-flLxhsC0HZHnJUvf-bpjJ8Vc_c")
+	updater = Updater("552087604:AAGjJdws9F3l9k6LIgNImWoHy3cObRG7thg")
 
 	# Get the dispatcher to register handlers
 	dp = updater.dispatcher
