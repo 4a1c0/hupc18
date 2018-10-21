@@ -73,7 +73,7 @@ def transcript(bot, update):
 		os.remove(audio_recv)
 		os.remove(audio_recv + ".aiff")
 	except Exception as e:
-		msg = "I can not hear you"
+		mes = "I can not hear you"
 
 	return mes
 
