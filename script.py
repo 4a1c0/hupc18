@@ -26,7 +26,7 @@ from pydub import AudioSegment  # pip install pydub y ffmpeg
 
 import os
 
-from skyscanner.skyscanner import FlightsCache, Transport
+from skyscanner.skyscanner import FlightsCache, Transport, Flights
 
 
 # Enable logging
@@ -73,6 +73,7 @@ def transcript(bot, update):
 		os.remove(audio_recv)
 		os.remove(audio_recv + ".aiff")
 	except Exception as e:
+		print(e)
 		mes = "I can not hear you"
 
 	return mes
@@ -108,7 +109,8 @@ def skyscanner(msg,bot,update):
 				locale='en-GB',
 				originplace=from_["Places"][0]["PlaceId"],
 				destinationplace=to["Places"][0]["PlaceId"],
-				outbounddate='anytime'
+				outbounddate='anytime',
+				adults=1
 				).parsed
 
 			carrierID = result["Quotes"][0]["OutboundLeg"]["CarrierIds"][0]
@@ -125,20 +127,35 @@ def skyscanner(msg,bot,update):
 				placesDic[place["PlaceId"]] = place
 				place.pop('PlaceId', None)
 
+			price, url = getLink(from_["Places"][0]["PlaceId"], to["Places"][0]["PlaceId"], departureDate[:10])
+
 			update.message.reply_text("Departure from "+placesDic[aeroSortida]["Name"]+
-				" Airport to "+placesDic[aeroArribada]["Name"]+" Airport, with departure date: " + departureDate.strftime('%-m/%d/%y') + " and carried by "
-				+carrierDic[carrierID]+" from "+str(format(result["Quotes"][0]["MinPrice"], '.0f')) + " " +result["Currencies"][0]["Symbol"]+".")
+				" Airport to "+placesDic[aeroArribada]["Name"]+" Airport, with departure date: " + departureDate[:10] + " from "+str(format(price, '.0f')) + " " +result["Currencies"][0]["Symbol"]+".\n\n You can book it from here: " + url)	
 
 		except Exception as e:
+			print(e)
 			update.message.reply_text("Some data seems wrong, have you indicated an origin and a destination?")
 		
-
 def skySearch_voice(bot,update):
 	skyscanner(transcript(bot,update),bot,update)
 
 def skySearch_text(bot,update):
 	skyscanner(update.message.text,bot,update)
 	
+def getLink(originplace_ ,destinationplace_, outbounddate_):
+	flights_service = Flights('ha306082955374085267757354385037')
+	result = flights_service.get_result(
+	    country='ES',
+	    currency='eur',
+	    locale='en-GB',
+	    originplace=originplace_,
+	    destinationplace=destinationplace_,
+	    outbounddate=outbounddate_,
+	    sorttype='price',
+	    sortorder='asc',
+	    adults=1).parsed
+
+	return (result['Itineraries'][0]['PricingOptions'][0]['Price'],result['Itineraries'][0]['PricingOptions'][0]['DeeplinkUrl'])
 
 
 def main():
