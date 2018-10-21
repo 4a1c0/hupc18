@@ -79,7 +79,7 @@ def transcript(bot, update):
 
 def skyscanner(msg,bot,update):
 
-	if((msg.find("flight") == -1) and (msg.find("to fly") == -1) and (msg.find("fly to") == -1) and (msg.find("fly from") == -1)):
+	if((msg.find("flight") == -1) and (msg.find("to fly") == -1) and (msg.find("fly to") == -1) and (msg.find("fly from") == -1) and (msg.find("go to") == -1)):
 		update.message.reply_text("Are you asking for a flight?")
 
 	else:
